@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<style>
+  [v-cloak] {
+    display: none;
+  }
+</style>
+<html>
+<body>
+  <div id="app" v-cloak>
+    <div v-if="setUserPanel">
+        <input v-model='user' type="text" value="" v-on:keyup.enter="setUser" v-focus />
+        <button @click='setUser'>OK</button>
+    </div>
+    <div v-if="chatPanel">    
+        <h1>Chat</h1>
+        <input 
+        v-model='text' type="text" value="" v-on:keyup.enter="sendMsg" ref="text"/>
+        <button @click='sendMsg'>OK</button>
+        <ul>
+          <li v-for="i in items">
+              [{{i.user}}] : {{i.msg}}
+          </li>
+        </ul>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.9/vue.min.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> -->
+  <script>
+    var app = new Vue({
+      el: "#app",
+      directives: {
+        focus: { // v-focus
+          inserted: function (el) {
+            el.focus()
+          }
+        }
+      },
+      data:{
+        setUserPanel:true,
+        chatPanel:false,
+        user:'',
+        socket:null,
+        items:[],
+        text:''
+      },
+      methods:{
+        add:function(d){
+          this.items.push(d)
+        },
+        init:function(){
+          this.socket = io("http://localhost:3000");
+          this.socket.on('chat',(d)=>{
+            console.log(d)
+            this.add(d)
+          })
+        },
+        setUser:function(){
+          if((this.user.trim()) === ''){
+            alert('Error!');
+          }else{
+            this.setUserPanel = false;
+            this.chatPanel = true;
+            
+            // this.$refs.text.el.focus()
+            this.init();
+
+          }
+        },
+        sendMsg:function(){
+          if((this.text.trim()) !== ''){
+            this.socket.emit('chat',{user:this.user,msg:this.text})
+            this.text = ''
+          } 
+        }
+      }
+    })
+    
+  </script>
+</body>
+</html>
